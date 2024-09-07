@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:hacka_correios/pages/success_page.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
-import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
-import 'package:pdf/pdf.dart';
 import 'package:hacka_correios/core/theme/app_colors.dart';
 
 class FormPage extends StatefulWidget {
@@ -32,11 +30,15 @@ class _FormPageState extends State<FormPage> {
   bool _noNeighbour = true;
   String _neighbourNumber = '';
 
+  bool isLoading = false;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: AppColors.amareloCorreios,
+        centerTitle: true,
         title: Text(
           'Preencha o formulário',
           style: TextStyle(color: AppColors.azulClaro, fontSize: 25, fontWeight: FontWeight.bold),
@@ -72,8 +74,43 @@ class _FormPageState extends State<FormPage> {
                 const SizedBox(height: 30),
                 Align(
                   alignment: Alignment.centerRight,
-                  child: ElevatedButton(
-                    onPressed: _generatePDF,
+                  child: 
+                  isLoading
+                  ? Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Center(child: CircularProgressIndicator(color: AppColors.azulCorreios,)),
+                  )
+                  : ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        isLoading = true;
+                      });
+                      Future.delayed(const Duration(seconds: 3)).then((_) {
+                        setState(() {
+                          isLoading = false;
+                        });
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => SuccessPage(
+                              receiver: _receiverController.text,
+                              document: _documentController.text,
+                              deliveryDate: _deliveryDateController.text,
+                              authorizeNeighbour: _authorizeNeighbour,
+                              neighbourNumber: _neighbourNumber,
+                              address: _addressController.text,
+                              cityUf: _cityUfController.text,
+                              phone: _phoneController.text,
+                              cep: _cepFormatter.getMaskedText(),
+                              senderAddress: _senderAddressController.text,
+                              senderCityUf: _senderCityUfController.text,
+                              senderPhone: _senderPhoneController.text,
+                              senderCep: _senderCepFormatter.getMaskedText(),
+                            ),
+                          ),
+                        );
+                      });
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.amareloCorreios,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -141,101 +178,6 @@ class _FormPageState extends State<FormPage> {
       ],
     );
   }
-
-  Future<void> _generatePDF() async {
-  if (_formKey.currentState?.validate() ?? false) {
-    final pdf = pw.Document();
-
-    pdf.addPage(pw.Page(
-      pageFormat: PdfPageFormat.a4,
-      build: (pw.Context context) {
-        return pw.Padding(
-          padding: const pw.EdgeInsets.all(20),
-          child: pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Text(
-                'Dados da Entrega',
-                style: pw.TextStyle(
-                  fontSize: 18,
-                  fontWeight: pw.FontWeight.bold,
-                ),
-              ),
-              pw.Divider(),
-              pw.SizedBox(height: 10),
-              _buildInfoRow('Recebedor:', _receiverController.text),
-              _buildInfoRow('Documento:', _documentController.text),
-              _buildInfoRow('Data de entrega:', _deliveryDateController.text),
-              _buildInfoRow(
-                'Autorização de entrega no vizinho:',
-                _authorizeNeighbour ? "Sim" : "Não",
-              ),
-              if (_authorizeNeighbour)
-                _buildInfoRow('Número do vizinho:', _neighbourNumber),
-              pw.SizedBox(height: 20),
-              
-              pw.Text(
-                'Dados do Destinatário',
-                style: pw.TextStyle(
-                  fontSize: 18,
-                  fontWeight: pw.FontWeight.bold,
-                ),
-              ),
-              pw.Divider(),
-              pw.SizedBox(height: 10),
-              _buildInfoRow('Endereço:', _addressController.text),
-              _buildInfoRow('Cidade/UF:', _cityUfController.text),
-              _buildInfoRow('Telefone:', _phoneController.text),
-              _buildInfoRow('CEP:', _cepFormatter.getMaskedText()),
-
-              pw.SizedBox(height: 20),
-              pw.Text(
-                'Dados do Remetente',
-                style: pw.TextStyle(
-                  fontSize: 18,
-                  fontWeight: pw.FontWeight.bold,
-                ),
-              ),
-              pw.Divider(),
-              pw.SizedBox(height: 10),
-              _buildInfoRow('Endereço:', _senderAddressController.text),
-              _buildInfoRow('Cidade/UF do remetente:', _senderCityUfController.text),
-              _buildInfoRow('Telefone do remetente:', _senderPhoneController.text),
-              _buildInfoRow('CEP do remetente:', _senderCepFormatter.getMaskedText()),
-            ],
-          ),
-        );
-      },
-    ));
-
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-    );
-  }
-}
-
-pw.Widget _buildInfoRow(String label, String value) {
-  return pw.Padding(
-    padding: const pw.EdgeInsets.symmetric(vertical: 4),
-    child: pw.Row(
-      children: [
-        pw.Expanded(
-          flex: 2,
-          child: pw.Text(
-            label,
-            style: pw.TextStyle(
-              fontWeight: pw.FontWeight.bold,
-            ),
-          ),
-        ),
-        pw.Expanded(
-          flex: 3,
-          child: pw.Text(value),
-        ),
-      ],
-    ),
-  );
-}
 
 
   Widget _buildTextFormField(TextEditingController controller, String labelText) {

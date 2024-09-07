@@ -55,7 +55,7 @@ class InitialPage extends StatelessWidget {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.amareloCorreios,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                        padding: const EdgeInsets.symmetric(horizontal: 70, vertical: 20),
+                        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
                       ),
                       child: Text(
                         'Iniciar atendimento',
